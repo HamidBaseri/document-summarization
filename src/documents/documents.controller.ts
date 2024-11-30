@@ -8,8 +8,9 @@ import {
   UseInterceptors,
   Request,
   BadRequestException,
+  UploadedFiles,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { DocumentsService } from './documents.service';
 import { diskStorage } from 'multer';
 
@@ -55,7 +56,6 @@ export class DocumentsController {
     if (!file) {
       throw new BadRequestException('File does not uploaded');
     }
-    console.log(file);
     const documentData = {
       userId: user.id,
       fileName: file.originalname,
@@ -64,6 +64,55 @@ export class DocumentsController {
     };
 
     return this.documentsService.uploadDocument(documentData);
+  }
+
+  @Post('batch-upload')
+  @UseInterceptors(
+    FilesInterceptor('files', 10, {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, callback) => {
+          const fileName = `${Date.now()}-${file.originalname}`;
+          callback(null, fileName);
+        },
+      }),
+      fileFilter: (req, file, callback) => {
+        const allowedMimeTypes = [
+          'application/pdf',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'text/plain',
+        ];
+
+        if (!allowedMimeTypes.includes(file.mimetype)) {
+          return callback(
+            new BadRequestException(
+              'Invalid file type. Only PDF, DOCX, and TXT files are allowed.',
+            ),
+            false,
+          );
+        }
+        callback(null, true);
+      },
+    }),
+  )
+  async uploadDocuments(
+    @UploadedFiles() files: Array<Express.Multer.File>,
+    @Request() req: any,
+  ) {
+    const user = req.user;
+
+    if (!files || files.length === 0) {
+      throw new BadRequestException('No files uploaded');
+    }
+
+    const uploadedFiles = files.map((file) => ({
+      userId: user.id,
+      fileName: file.originalname,
+      filePath: file.path,
+      fileType: file.mimetype,
+    }));
+
+    return this.documentsService.uploadMultipleDocuments(uploadedFiles);
   }
 
   @Get(':id')

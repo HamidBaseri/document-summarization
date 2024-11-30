@@ -1,20 +1,12 @@
-import { Controller } from '@nestjs/common';
-import OpenAI from 'openai';
-
-const client = new OpenAI({
-  apiKey: process.env['OPENAI_API_KEY'],
-});
+import { Controller, Post } from '@nestjs/common';
+import { SummarizationService } from './summarization.service';
 
 @Controller('summarization')
 export class SummarizationController {
-  async summarizeText(text: string) {
-    const chatCompletion = await client.chat.completions.create({
-      messages: [
-        { role: 'user', content: 'Summarize the following text:\n\n' + text },
-      ],
-      model: 'gpt-4o',
-    });
+  constructor(private readonly summarizationService: SummarizationService) {}
 
-    return chatCompletion.choices[0];
+  @Post()
+  async triggerSummarization() {
+    return await this.summarizationService.summarizeDocuments();
   }
 }

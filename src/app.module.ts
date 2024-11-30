@@ -9,7 +9,7 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PrismaModule } from './prisma/prisma.module';
 import { MulterModule } from '@nestjs/platform-express';
-import { AuthMiddleware } from './auth/auth.middleware'; // Import the AuthMiddleware
+import { AuthMiddleware } from './auth/auth.middleware';
 
 @Module({
   imports: [

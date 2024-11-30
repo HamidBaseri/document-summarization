@@ -23,6 +23,28 @@ export class DocumentsService {
     });
   }
 
+  async uploadMultipleDocuments(
+    documentsData: Array<{
+      userId: number;
+      fileName: string;
+      filePath: string;
+      fileType: string;
+    }>,
+  ) {
+    const createPromises = documentsData.map((document) =>
+      this.prisma.document.create({
+        data: {
+          userId: document.userId,
+          filename: document.fileName,
+          filePath: document.filePath,
+          fileType: document.fileType,
+        },
+      }),
+    );
+
+    return Promise.all(createPromises);
+  }
+
   async getDocument(id: number, userId: number) {
     const document = await this.prisma.document.findFirst({
       where: {
